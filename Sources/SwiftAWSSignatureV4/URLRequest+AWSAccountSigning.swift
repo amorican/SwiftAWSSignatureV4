@@ -64,7 +64,7 @@ extension URLRequest {
 		let nowComponents:DateComponents = AWSAccount.dateComponents(for:date)
 		//credential
 		//setValue(AWSAccount.credentialString(now:nowComponents), forHTTPHeaderField: "x-amz-credential")
-		setValue(HTTPDate(now:nowComponents), forHTTPHeaderField: "Date")
+        setValue(HTTPDate(now:nowComponents), forHTTPHeaderField: "Date")
 		if let _ = httpBody {
 			if signPayload {
 				//TODO: verify me
@@ -74,22 +74,22 @@ extension URLRequest {
 			}
 		} else {
 			//the hash of an empty string
-			setValue("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", forHTTPHeaderField: "x-amz-content-sha256")
+            setValue("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", forHTTPHeaderField: "x-amz-content-sha256")
+            
 		}
 	}
 	
 	///creates a
-	func HTTPDate(now:DateComponents)->String {
-		let dayName:String = AWSAccount.calendar.shortWeekdaySymbols[now.weekday! - 1]
-		let monthShort:String = AWSAccount.calendar.shortMonthSymbols[now.month! - 1]
-		let year:String = "\(now.year!)"
-		let day:String = "\(now.day!)".prepadded("0", length: 2)
-		let hour:String = "\(now.hour!)".prepadded("0", length: 2)
-		let minute:String = "\(now.minute!)".prepadded("0", length: 2)
-		let second:String = "\(now.second!)".prepadded("0", length: 2)
-		return dayName + ", " + day + " " + monthShort + " " + year + " " + hour + ":" + minute + ":" + second + " GMT"
-	}
-	
+    func HTTPDate(now:DateComponents)->String {
+        let year:String = "\(now.year!)"
+        let day:String = "\(now.day!)".prepadded("0", length: 2)
+        let month:String = "\(now.month!)".prepadded("0", length: 2)
+        let hour:String = "\(now.hour!)".prepadded("0", length: 2)
+        let minute:String = "\(now.minute!)".prepadded("0", length: 2)
+        let second:String = "\(now.second!)".prepadded("0", length: 2)
+        return year + month + day + "T" + hour + minute + second + "Z"
+    }
+    
 	///returns sorted key-value tuples
 	func canonicalHeaders()->[(String, String)] {
 		let allHeaders = allHTTPHeaderFields ?? [:]
@@ -98,8 +98,9 @@ extension URLRequest {
 		}
 		headerValues = headerValues.filter({ (key0, _) -> Bool in
 			return key0 == "host"
-				|| key0 == "content-type"
-				|| key0.hasPrefix("x-amz-")
+                || key0 == "content-type"
+                || key0.hasPrefix("x-amz-")
+                || key0.lowercased() == "date"
 		})
 		if allHeaders["Host"] == nil, let host:String = url?.host {
 			headerValues.append(("host",host))
@@ -140,8 +141,8 @@ extension URLRequest {
 	
 	func canonicalRequest(signPayload:Bool)->(request:String, signedHeaders:String)? {
 		guard let (beforePayload, signedHeaders) = canonicalRequestBeforePayload() else { return nil }
-		let hashedBody:String = signPayload ? sha256HashedBody.map { CryptoUtils.hexString(from: $0).uppercased() }
-			?? "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855" : "UNSIGNED-PAYLOAD"
+        let hashedBody:String = signPayload ? sha256HashedBody.map { CryptoUtils.hexString(from: $0) }
+            ?? "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" : "UNSIGNED-PAYLOAD"
 		return (beforePayload + "\n" + hashedBody, signedHeaders)
 	}
 	
